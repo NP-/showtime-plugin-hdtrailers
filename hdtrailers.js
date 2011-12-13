@@ -1,8 +1,10 @@
 /**
- *  HD Trailers plugin for showtime version 0.1  by NP
+ *  HD Trailers plugin for showtime version 0.11  by NP
  *
- * 	Change Log:
-
+ * 	ChangeLog:
+ *  0.11
+ * 	fix yahoo's link problem
+ *
  *  Copyright (C) 2011 NP
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -58,6 +60,7 @@
 	    authreq.setHeader("User-Agent", "QuickTime");
 	  });
 
+
 	function startPage(page) {      
 	
 		page.type = "directory";
@@ -84,7 +87,7 @@
 			else if (!url || url == '')
 				url = getValue(item.toString(), '"', '"&gt;480p&lt', 'endRef');
 			
-			page.appendItem(url,"video", metadata); 
+			page.appendItem(url.replace(/amp;amp;/gi,''),"video", metadata); 
 			url = false;  
 		}
 		
@@ -175,7 +178,7 @@
 				url = getValue(film, '"', '" rel="lightbox[res480p', 'endRef');
 
 			if( url != '')
-				page.appendItem(url, "video", { title:  getValue(film, 'itemprop="name">', '<')});
+				page.appendItem(url.replace(/amp;amp;/gi,''), "video", { title:  getValue(film, 'itemprop="name">', '<')});
 			url = ''
 		}
 			
@@ -193,7 +196,7 @@
 		page.metadata.icon = icon;
 		page.appendPassiveItem("bodytext", new showtime.RichText(getValue(content, '<meta name="description" content="', '"')));
 		
-		page.appendAction("navopen", getValue(content, '"', '" class="playLatest"', 'endRef'), true, {
+		page.appendAction("navopen", getValue(content, '"', '" class="playLatest"', 'endRef').replace(/amp;amp;/gi,''), true, {
 					title: "Play Latest"
 					});
 		
