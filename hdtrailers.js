@@ -2,6 +2,7 @@
  *  HD Trailers plugin for showtime version 0.11  by NP
  *
  * 	ChangeLog:
+ *  filter youtube links (not supported at the moment
  *  0.11
  * 	fix yahoo's link problem
  *
@@ -19,6 +20,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * TODO: Add support to youtube 
  */
 (function(plugin) {
 
@@ -87,7 +90,8 @@
 			else if (!url || url == '')
 				url = getValue(item.toString(), '"', '"&gt;480p&lt', 'endRef');
 			
-			page.appendItem(url.replace(/amp;amp;/gi,''),"video", metadata); 
+			if(url.indexOf('youtube.com')==-1)
+				page.appendItem(url.replace(/amp;amp;/gi,''),"video", metadata); 
 			url = false;  
 		}
 		
@@ -147,7 +151,8 @@
 		content = getValue(content, '<table class="indexTable">', '</table>');
 		content = content.split('<td class="indexTableTrailerImage">');
 		for each (var film in content)
-			if(getValue(film, 'title="', '"') != '')
+			if(getValue(film, 'title="', '"') != '' && 
+						getValue(film, 'href="','"').indexOf('youtube.com')==-1)
 				page.appendItem( PREFIX + 'present:'+ getValue(film, 'href="','"'), "video", 
 							{ title:  getValue(film, 'title="', '"'),
 							  icon:	getValue(film, 'src="', '"')});
@@ -177,7 +182,7 @@
 			else if (!url || url == '')
 				url = getValue(film, '"', '" rel="lightbox[res480p', 'endRef');
 
-			if( url != '')
+			if( url != '' && url.indexOf('youtube.com')==-1)
 				page.appendItem(url.replace(/amp;amp;/gi,''), "video", { title:  getValue(film, 'itemprop="name">', '<')});
 			url = ''
 		}
