@@ -1,8 +1,9 @@
 /**
- *  HD Trailers plugin for showtime version 0.11  by NP
+ *  HD Trailers plugin for showtime version 0.12  by NP
  *
  * 	ChangeLog:
- *  filter youtube links (not supported at the moment
+ * 	0.12
+ *  added support for youtube (requires youtube plugin)
  *  0.11
  * 	fix yahoo's link problem
  *
@@ -36,13 +37,16 @@
 	
 	var settings  = plugin.createSettings("HD Trailers",
 					  plugin.path + "logo.png",
-					 "HD Trailers");
+					 "Movie Trailers");
 	
 	settings.createInfo("info",
 			     plugin.path + "logo.png",
-			     "HD-Trailers.net \nThis plugin was created for the sole purpose of allowing you to easily view HD (High Definition) movie trailers.\nBased on HD-Trailers.net"+
-				 "Plugin developed by NP \n");
+			     "This plugin was created for the sole purpose of allowing you to easily view HD (High Definition) movie trailers.\nBased on HD-Trailers.net"+
+				 "\nPlugin developed by NP");
 				 	
+	settings.createBool("youtube", "Support Youtube links (requires youtube plugin)", false, function(v) {
+	    service.youtube = v;
+	  });
 	
 	settings.createBool("hd", "HD", false, function(v) {
 	    service.hd = v;
@@ -73,7 +77,7 @@
 		var trailers = new XML(showtime.httpGet("http://feeds.hd-trailers.net/hd-trailers").toString());
 		page.metadata.title = trailers.channel.lastBuildDate.toString()	;
 		var url = false;
-		
+		var title = '';
 		for each (var item in trailers.channel.item) {
 			 
 			var metadata = {
@@ -90,8 +94,12 @@
 			else if (!url || url == '')
 				url = getValue(item.toString(), '"', '"&gt;480p&lt', 'endRef');
 			
-			if(url.indexOf('youtube.com')==-1)
-				page.appendItem(url.replace(/amp;amp;/gi,''),"video", metadata); 
+			if(url.indexOf('youtube.com')==-1){
+				page.appendItem(url.replace(/amp;amp;/gi,''),"video", metadata);
+			}else if(url.indexOf('clipconverter.cc')==-1 && service.youtube == "1"){
+				page.appendItem('youtube:video:simple:'+ metadata.title + ':' + getValue(url, 'v=', '&')
+				 ,"video", metadata);
+			} 
 			url = false;  
 		}
 		
@@ -150,12 +158,12 @@
 		var next = getValue(content, '"', '">Next &#8811', 'endRef');		
 		content = getValue(content, '<table class="indexTable">', '</table>');
 		content = content.split('<td class="indexTableTrailerImage">');
-		for each (var film in content)
-			if(getValue(film, 'title="', '"') != '' && 
-						getValue(film, 'href="','"').indexOf('youtube.com')==-1)
+		for each (var film in content){
+			if(getValue(film, 'title="', '"') != '')
 				page.appendItem( PREFIX + 'present:'+ getValue(film, 'href="','"'), "video", 
 							{ title:  getValue(film, 'title="', '"'),
 							  icon:	getValue(film, 'src="', '"')});
+		}		
 
 		if(next != '')
 			page.appendItem( PREFIX + 'list:'+ next , "directory", { title:  'Next' });
@@ -174,6 +182,7 @@
 		content = getValue(content, '<table class="bottomTable">', '</table>');
 		content = content.split('<td class="bottomTableDate" rowspan="2">');
 		var url = '';
+		var title = '';
 		for each (var film in content){
 			if (service.fullhd == "1")
 				url = getValue(film, '"', '" rel="lightbox[res1080p', 'endRef');
@@ -181,10 +190,17 @@
 				url = getValue(film, '"', '" rel="lightbox[res720p', 'endRef');
 			else if (!url || url == '')
 				url = getValue(film, '"', '" rel="lightbox[res480p', 'endRef');
-
-			if( url != '' && url.indexOf('youtube.com')==-1)
-				page.appendItem(url.replace(/amp;amp;/gi,''), "video", { title:  getValue(film, 'itemprop="name">', '<')});
-			url = ''
+			
+			title =  getValue(film, 'itemprop="name">', '<');
+			if( url != '' && url.indexOf('youtube.com')==-1){
+				page.appendItem(url.replace(/amp;amp;/gi,''), "video", { title: title});
+			}else if( url != '' && url.indexOf('clipconverter.cc')==-1 && service.youtube == "1"){
+				showtime.trace('youtube: ' +url);
+				page.appendItem('youtube:video:simple:'+ title + ':' + getValue(url, 'v=', '&')
+				 ,"video", { title: title});
+			}
+			url = '';
+			title = '';
 		}
 			
 		page.loading = false;	
